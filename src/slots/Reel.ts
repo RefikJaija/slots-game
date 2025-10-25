@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js';
+import { sound } from '../utils/sound';
 import { AssetLoader } from '../utils/AssetLoader';
 
 const SYMBOL_TEXTURES = [
@@ -9,7 +10,7 @@ const SYMBOL_TEXTURES = [
     'symbol5.png',
 ];
 
-const SPIN_SPEED = 50; // Pixels per frame
+const SPIN_SPEED = 50; // Pixels per frame (multiplied by ticker delta)
 const SLOWDOWN_RATE = 0.95; // Rate at which the reel slows down
 
 export class Reel {
@@ -30,23 +31,72 @@ export class Reel {
     }
 
     private createSymbols(): void {
-        // Create symbols for the reel, arranged horizontally
+        // Clean container
+        this.container.removeChildren();
+        this.symbols = [];
+
+        // Create `symbolCount` sprites placed horizontally next to each other
+        for (let i = 0; i < this.symbolCount; i++) {
+            const sprite = this.createRandomSymbol();
+            sprite.x = i * this.symbolSize;
+            sprite.y = 0;
+            sprite.width = this.symbolSize;
+            sprite.height = this.symbolSize;
+            sprite.anchor.set(0); // top-left anchor (we position by x,y)
+            this.container.addChild(sprite);
+            this.symbols.push(sprite);
+        }
     }
 
     private createRandomSymbol(): PIXI.Sprite {
-        // TODO:Get a random symbol texture
+        // Choose a random texture name from SYMBOL_TEXTURES
+        const name = SYMBOL_TEXTURES[Math.floor(Math.random() * SYMBOL_TEXTURES.length)];
+        // Attempt to get texture from AssetLoader; fall back to empty texture
+        let texture: PIXI.Texture | undefined;
+        try {
+            texture = AssetLoader.getTexture(name);
+        } catch (e) {
+            texture = undefined;
+        }
 
-        // TODO:Create a sprite with the texture
-
-        return new PIXI.Sprite();
+        const sprite = new PIXI.Sprite(texture ?? PIXI.Texture.EMPTY);
+        sprite.width = this.symbolSize;
+        sprite.height = this.symbolSize;
+        sprite.anchor.set(0);
+        return sprite;
     }
 
     public update(delta: number): void {
+        // PIXI's ticker passes a `delta` which is often ~1 per frame, can be >1 on slow devices.
         if (!this.isSpinning && this.speed === 0) return;
 
-        // TODO:Move symbols horizontally
+        // Move symbols horizontally to the left (creating leftward spin)
+        const moveAmount = this.speed * delta;
 
-        // If we're stopping, slow down the reel
+        for (const sym of this.symbols) {
+            sym.x -= moveAmount;
+        }
+
+        // Wrap symbols: if a symbol moves completely off the left edge, move it to the rightmost position
+        // Compute rightmost x among symbols
+        let maxX = Number.NEGATIVE_INFINITY ;
+        for (const sym of this.symbols) {   
+            if (sym.x > maxX) maxX = sym.x;
+        }
+
+        for (const sym of this.symbols) {
+            if (sym.x + this.symbolSize <= 115) {
+                // place it to the right of current max
+                sym.x = maxX + this.symbolSize - 15 ;
+                maxX = sym.x;
+                // optionally set a new random texture when it wraps
+                const newTexName = SYMBOL_TEXTURES[Math.floor(Math.random() * SYMBOL_TEXTURES.length)];
+                const newTex = AssetLoader.getTexture(newTexName);
+                if (newTex) sym.texture = newTex;
+            }
+        }
+
+        // If we're stopping, slow down the reel smoothly
         if (!this.isSpinning && this.speed > 0) {
             this.speed *= SLOWDOWN_RATE;
 
@@ -59,8 +109,17 @@ export class Reel {
     }
 
     private snapToGrid(): void {
-        // TODO: Snap symbols to horizontal grid positions
+        // Align the symbols so that they sit exactly on multiples of symbolSize starting at x=0.
+        // We'll sort current symbols by their x, then reposition them sequentially to the grid.
+        const sorted = [...this.symbols].sort((a, b) => a.x - b.x);
 
+        for (let i = 0; i < sorted.length; i++) {
+            const targetX = i * this.symbolSize;
+            // Smooth snap by directly assigning (small correction is fine after slowdown)
+            sorted[i].x = targetX;
+        }
+        //Stop the Reel spin sound when the Reel stops spinning
+        sound.stop('Reel spin');
     }
 
     public startSpin(): void {

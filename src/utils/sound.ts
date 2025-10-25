@@ -1,4 +1,3 @@
-// src/utils/sound.ts
 import { Howl } from 'howler';
 
 type HowlMap = Record<string, Howl>;
@@ -19,6 +18,7 @@ export const sound = {
 
             _sounds[alias] = new Howl({
                 src: [url],
+                //load the sound file into memory right now
                 preload: true,
             });
         } catch (err) {
