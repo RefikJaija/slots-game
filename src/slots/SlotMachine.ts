@@ -127,10 +127,36 @@ export class SlotMachine {
             console.log('Winner!');
 
             if (this.winAnimation) {
-                // TODO: Play the win animation found in "big-boom-h" spine
+                try {
+                    this.winAnimation.visible = true;
+
+                    // Prefer named animation 'win'/'boom'/'idle' if present, otherwise pick the first available animation
+                    const state = (this.winAnimation as any).state;
+                    // If Spine instance exposes animations list
+                    let animName: string | undefined;
+                    if ((this.winAnimation as any).spineData && (this.winAnimation as any).spineData.animations && (this.winAnimation as any).spineData.animations.length) {
+                        animName = (this.winAnimation as any).spineData.animations[0].name;
+                    }
+
+                    // Try common names
+                    const preferred = ['win', 'boom', 'big-boom', 'idle'];
+                    for (const p of preferred) {
+                        if (!animName && state.hasAnimation && state.hasAnimation(p)) animName = p;
+                    }
+
+                    if (animName) {
+                        state.setAnimation(0, animName, false);
+                    } else if (state.setAnimation) {
+                        // fallback: try 'idle' if available
+                        state.setAnimation(0, 'idle', false);
+                    }
+                } catch (err) {
+                    console.warn('Failed to play win animation', err);
+                }
             }
         }
     }
+
 
     public setSpinButton(button: PIXI.Sprite): void {
         this.spinButton = button;
