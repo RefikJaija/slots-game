@@ -21,7 +21,7 @@ export class Game {
         const gameContainer = document.getElementById('game-container');
         if (gameContainer) {
             gameContainer.appendChild(this.app.view as HTMLCanvasElement);
-        }
+        }       
 
         this.assetLoader = new AssetLoader();
 

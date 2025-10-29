@@ -43,7 +43,7 @@ export class SlotMachine {
             background.drawRect(
                 -20,
                 -20,
-                SYMBOL_SIZE * SYMBOLS_PER_REEL + 40, // Width now based on symbols per reel
+                SYMBOL_SIZE * SYMBOLS_PER_REEL + 60, // Width now based on symbols per reel
                 REEL_HEIGHT * REEL_COUNT + REEL_SPACING * (REEL_COUNT - 1) + 40 // Height based on reel count
             );
             background.endFill();
@@ -134,15 +134,28 @@ export class SlotMachine {
                     const state = (this.winAnimation as any).state;
                     // If Spine instance exposes animations list
                     let animName: string | undefined;
-                    if ((this.winAnimation as any).spineData && (this.winAnimation as any).spineData.animations && (this.winAnimation as any).spineData.animations.length) {
+
+                    // --- 1. PREFERRED NAMES FIRST ---
+                    const preferred = 'big-boom-h' ;
+                    if (!animName && state.hasAnimation && state.hasAnimation(preferred)) {
+                            animName = preferred;
+                    }
+
+                    // const preferred = ['win', 'boom', 'big-boom-h', 'idle'];
+                    // for (const p of preferred) {
+                    //     // Check if name is available and set it if animName is currently empty
+                    //     if (!animName && state.hasAnimation && state.hasAnimation(p)) {
+                    //         animName = p;
+                    //     }
+                    // }
+                    
+                    // --- 2. GENERIC FALLBACK SECOND ---
+                    // Only run this if we STILL haven't found a preferred name
+                    if (!animName && (this.winAnimation as any).spineData && (this.winAnimation as any).spineData.animations && (this.winAnimation as any).spineData.animations.length) {
                         animName = (this.winAnimation as any).spineData.animations[0].name;
                     }
 
-                    // Try common names
-                    const preferred = ['win', 'boom', 'big-boom', 'idle'];
-                    for (const p of preferred) {
-                        if (!animName && state.hasAnimation && state.hasAnimation(p)) animName = p;
-                    }
+                    console.log('Animation name: ', animName);
 
                     if (animName) {
                         state.setAnimation(0, animName, false);

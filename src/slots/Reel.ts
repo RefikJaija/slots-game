@@ -87,7 +87,7 @@ export class Reel {
         for (const sym of this.symbols) {
             if (sym.x + this.symbolSize <= 115) {
                 // place it to the right of current max
-                sym.x = maxX + this.symbolSize - 15 ;
+                sym.x = maxX + this.symbolSize -15;
                 maxX = sym.x;
                 // optionally set a new random texture when it wraps
                 const newTexName = SYMBOL_TEXTURES[Math.floor(Math.random() * SYMBOL_TEXTURES.length)];
@@ -118,6 +118,8 @@ export class Reel {
             // Smooth snap by directly assigning (small correction is fine after slowdown)
             sorted[i].x = targetX;
         }
+
+        this.symbols = sorted;
         //Stop the Reel spin sound when the Reel stops spinning
         sound.stop('Reel spin');
     }
