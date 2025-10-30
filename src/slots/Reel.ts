@@ -11,7 +11,8 @@ const SYMBOL_TEXTURES = [
 ];
 
 const SPIN_SPEED = 50; // Pixels per frame (multiplied by ticker delta)
-const SLOWDOWN_RATE = 0.95; // Rate at which the reel slows down
+const SPIN_SPEED_PX_PER_SEC = 3000; // px/second
+const SLOWDOWN_RATE = 0.90; // Rate at which the reel slows down
 
 export class Reel {
     public container: PIXI.Container;
@@ -70,8 +71,11 @@ export class Reel {
         // PIXI's ticker passes a `delta` which is often ~1 per frame, can be >1 on slow devices.
         if (!this.isSpinning && this.speed === 0) return;
 
+        
         // Move symbols horizontally to the left (creating leftward spin)
-        const moveAmount = this.speed * delta;
+        const dtSeconds = delta / 60 ; // because PIXI's delta ≈ 1 per 1/60 sec
+        const moveAmount = this.speed * dtSeconds;
+        // const moveAmount = this.speed * delta;
 
         for (const sym of this.symbols) {
             sym.x -= moveAmount;
@@ -101,7 +105,7 @@ export class Reel {
             this.speed *= SLOWDOWN_RATE;
 
             // If speed is very low, stop completely and snap to grid
-            if (this.speed < 0.5) {
+            if (this.speed < 15) {
                 this.speed = 0;
                 this.snapToGrid();
             }
@@ -126,7 +130,8 @@ export class Reel {
 
     public startSpin(): void {
         this.isSpinning = true;
-        this.speed = SPIN_SPEED;
+        this.speed = SPIN_SPEED_PX_PER_SEC;
+        // this.speed = SPIN_SPEED;
     }
 
     public stopSpin(): void {
